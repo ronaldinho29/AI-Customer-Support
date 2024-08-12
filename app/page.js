@@ -1,153 +1,131 @@
 'use client'
+import { Box, Button, Stack, TextField } from "@mui/material";
 
-import { Box, Button, Stack, TextField } from '@mui/material'
-import React, { useState, useRef, useEffect } from 'react';
+import Image from "next/image";
+import { useState } from "react";
 
 export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hi! I'm the Headstarter support assistant. How can I help you today?",
-    },
-  ])
-  const [message, setMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false) // Add loading state
-
-  const messagesEndRef = useRef(null) // Create a reference to the end of messages container
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) // Scroll to the end
+ const [messages, setMessages]= useState([
+  {
+  role: 'assistant',
+  content: `Hi I'm the Headstarter Support Agent, how can I assist you today?`,
   }
-
-  useEffect(() => {
-    scrollToBottom() // Call scroll function when messages change
-  }, [messages])
-
+])
+  const [message,setMessage]= useState('')
 
   const sendMessage = async () => {
-    if (!message.trim() || isLoading) return; // Prevent sending empty messages or if already loading
-  
-    setIsLoading(true) // Set loading state to true
-    setMessage('')
-    setMessages((messages) => [
-      ...messages,
+    setMessages(prevMessages => [
+      ...prevMessages,
       { role: 'user', content: message },
       { role: 'assistant', content: '' },
-    ])
+    ]);
+  
+    setMessage(''); // Clear the input field
   
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify([...messages, { role: 'user', content: message }]),
-      })
+        body: JSON.stringify([...messages, { role: 'user', content: message }])
+      });
   
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
   
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
+      // Track if the response is completed
+      let completed = false;
   
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value, { stream: true })
-        setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1]
-          let otherMessages = messages.slice(0, messages.length - 1)
-          return [
-            ...otherMessages,
-            { ...lastMessage, content: lastMessage.content + text },
-          ]
-        })
+      while (!completed) {
+        const { done, value } = await reader.read();
+        if (done) {
+          completed = true;
+        } else {
+          result += decoder.decode(value, { stream: true });
+  
+          setMessages(prevMessages => {
+            // Update the last message with the accumulated result
+            const lastMessageIndex = prevMessages.length - 1;
+            const lastMessage = prevMessages[lastMessageIndex];
+            return [
+              ...prevMessages.slice(0, lastMessageIndex),
+              {
+                ...lastMessage,
+                content: result, // Update with the latest result
+              }
+            ];
+          });
+        }
       }
     } catch (error) {
-      console.error('Error:', error)
-      setMessages((messages) => [
-        ...messages,
-        { role: 'assistant', content: "I'm sorry, but I encountered an error. Please try again later." },
-      ])
-    } finally {
-      setIsLoading(false) // Ensure loading state is reset
+      console.error('Error fetching chat response:', error);
     }
-  }
+  };
+  
 
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      sendMessage()
-    }
-  }
 
-  return (
-    <Box
-      width="100vw"
-      height="100vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
+  return(
+  <Box 
+  width={"100vw"} 
+  height={"100vh"} 
+  display={"flex"} 
+  flexDirection={"column"}
+  justifyContent={"center"}
+  alignItems={"center"}
+  bgcolor={"#f5f5f5"} // Background color for the whole page
+  >
+    <Stack
+     direction={"column"}
+     width={"600px"}
+     height={"700px"}
+     border={"1px solid black"}
+     p={2}
+     spacing={3}
+     bgcolor={"#fff"} // Background color for the chat container
     >
       <Stack
-        direction={'column'}
-        width="500px"
-        height="700px"
-        border="1px solid black"
-        p={2}
-        spacing={3}
+        direction={"column"}
+        spacing={2}
+        flexGrow={1}
+        overflow={"auto"}
+        maxHeight={"100%"}
       >
-        <Stack
-          direction={'column'}
-          spacing={2}
-          flexGrow={1}
-          overflow="auto"
-          maxHeight="100%"
-        >
-          {messages.map((message, index) => (
-            <Box
-              key={index}
-              display="flex"
-              justifyContent={
-                message.role === 'assistant' ? 'flex-start' : 'flex-end'
-              }
+        {messages.map((message,index)=>(
+            <Box key = {index} display={'flex'} justifyContent={
+              message.role=== 'assistant' ? 'flex-start' : 'flex-end'
+            }
             >
-              <Box
-                bgcolor={
-                  message.role === 'assistant'
-                    ? 'primary.main'
-                    : 'secondary.main'
-                }
-                color="white"
-                borderRadius={16}
-                p={3}
+              <Box bgcolor={
+                message.role === 'assistant'
+                  ?'primary.main'
+                  : 'secondary.main'
+              }
+              color={"white"}
+              borderRadius={16}
+              p={3}
               >
                 {message.content}
               </Box>
             </Box>
           ))}
-          <div ref={messagesEndRef} /> {/* This div will ensure auto-scrolling */}
-        </Stack>
-        <Stack direction={'row'} spacing={2}>
-          <TextField
-            label="Message"
-            fullWidth
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress} // Add key press handler
-            disabled={isLoading} // Disable input while loading
-          />
-          <Button 
-            variant="contained" 
-            onClick={sendMessage}
-            disabled={isLoading} // Disable button while loading
-          >
-            {isLoading ? 'Sending...' : 'Send'} {/* Display loading state */}
-          </Button>
-        </Stack>
       </Stack>
-    </Box>
-  )
-}
+          <Stack direction={"row"} spacing={2}>
+            <TextField 
+              label= "Enter a message"
+              fullWidth
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              InputProps={{
+                style: {
+                  backgroundColor: '#fff', // Background color for the input field
+                },
+              }}
+            />
+            <Button variant="contained" onClick={sendMessage}>Send</Button>
+          
+          </Stack>
+    </Stack>
+  </Box>
+)}

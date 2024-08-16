@@ -1,16 +1,16 @@
-'use client';
+'use client'; // Add this at the top of your file
 import { useState } from 'react';
-import { Box, Button, Stack, TextField } from '@mui/material';
+import { Box, Button, Stack, TextField, IconButton } from '@mui/material';
 import Image from 'next/image';
+import CloseIcon from '@mui/icons-material/Close'; // Import CloseIcon for the close button
 
-// Use the correct path to the image in the public folder
 const chatIconSrc = '/images.png';
 
 export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `Hello! I'm your financial support assistant. How can I help you manage your budget, track expenses, or plan for your financial goals today? Feel free to ask me anything about your finances!`,
+      content: `Welcome to BudgetBot! I'm here to assist you with managing your budget, tracking expenses, and planning your financial goals. How can I help you today? Feel free to ask me anything about your finances!`,
     }
   ]);
   const [message, setMessage] = useState('');
@@ -85,7 +85,7 @@ export default function Home() {
       justifyContent={'center'}
       alignItems={'center'}
       sx={{
-        backgroundImage: 'url(/background.avif)', // Use the path relative to the public folder
+        backgroundImage: 'url(/Budget.png)', // Use the path relative to the public folder
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -94,8 +94,8 @@ export default function Home() {
     >
       <Box
         position="absolute"
-        top="40%" // Centered vertically
-        left="20%" // Centered horizontally
+        top="12%" // Centered vertically
+        left="05%" // Centered horizontally
         transform="translate(-50%, -50%)"
         textAlign="center" // Center text horizontally
         fontSize="5rem" // Increase font size for a bigger text
@@ -104,19 +104,6 @@ export default function Home() {
         zIndex="1" // Ensure the text is above other elements
       >
         BudgetBot
-        <Box
-          fontFamily="'Times New Roman', serif"
-          fontSize="1.2rem" // Adjust font size for the intro text
-          color="white"
-          mt={2} // Margin top for spacing
-          textAlign="center" // Center text horizontally
-          maxWidth="80%" // Control the maximum width to force text wrapping
-          whiteSpace="normal" // Allow text to wrap
-          lineHeight="1.5" // Adjust line height for better readability
-          marginLeft="50px" // Adjust this value to move the text to the right
-        >
-          Your intelligent financial assistant, always available to provide you with quick, precise, and insightful financial guidance.
-        </Box>
       </Box>
       {isChatOpen && (
         <Stack
@@ -132,6 +119,15 @@ export default function Home() {
           right={16} // Positioned to the right side
           zIndex={1000} // Ensure chatbox is above other elements
         >
+          <Stack
+            direction={'row'}
+            justifyContent={'flex-end'}
+            spacing={1}
+          >
+            <IconButton onClick={() => setIsChatOpen(false)} color="primary">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
           <Stack
             direction={'column'}
             spacing={2}
